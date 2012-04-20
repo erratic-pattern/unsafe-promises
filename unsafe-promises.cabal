@@ -10,7 +10,7 @@ Category: Concurrency
 Synopsis: Create pure futures using lazy IO.
 Build-type: Simple
 Description:
-        An experimental library for creating lazy promises that can be
+        An experimental library for creating promises that can be
         evaluated in pure code.
 
 source-repository this

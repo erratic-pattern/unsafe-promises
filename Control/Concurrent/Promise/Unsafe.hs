@@ -1,4 +1,4 @@
--- |An experimental library for creating lazy promises that can be evaluated in 
+-- |An experimental library for lazy promises that can be evaluated in 
 -- pure code.
 --
 -- Evaluation of a promise before its thread completes results in an 
