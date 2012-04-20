@@ -5,32 +5,32 @@
 -- indefinite block. This is accomplished by the use of 'unsafeInterleaveIO'.
 -- Thus, care should be taken in using this library, since it couples the
 -- execution time of pure code with an arbitrary IO computation.
--- Using "System.Timeout" from the timeout package can help to ensure that
+-- Using System.Timeout from the timeout package can help to ensure that
 -- forcing a promise is always well-defined.
 --
--- For safer implementations of promises, see "Control.Concurrent.Spawn" from 
--- the spawn package, and "Control.Concurrent.Future" from the future package. 
+-- For safer implementations of promises, see Control.Concurrent.Spawn from 
+-- the spawn package, and Control.Concurrent.Future from the future package. 
 module Control.Concurrent.Promise.Unsafe
-       ( -- *Creating lazy promises
+       ( -- *Creating promises
          promise, tryPromise
-         -- *Creating lists of lazy promises
+         -- *Creating lists of promises
        , promises, tryPromises
        ) where
 
-import Control.Concurrent.Thread
-import Control.Concurrent.Chan
-import Control.Exception
-import System.IO.Unsafe
+import Control.Concurrent.Thread (forkIO, Result, result)
+import Control.Concurrent.Chan (Chan, newChan, readChan, writeChan)
+import Control.Exception (catch)
+import GHC.Conc (pseq)
+import System.IO.Unsafe (unsafeInterleaveIO)
 
 import Control.Monad
 import Control.Applicative
-import Data.Function
 import Prelude hiding (catch)
 
 safePromises :: [IO a] -> IO (Chan (Result a))
 safePromises ios = do
   c <- newChan
-  forM ios $ 
+  forM_ ios $ 
     \io ->  forkIO $ (writeChan c . Right =<< io)
                      `catch` (writeChan c . Left)
   return c
@@ -56,7 +56,7 @@ tryPromise io = head <$> tryPromises [io]
 promises :: [IO a] -> IO [a]
 promises ios = do
   c <- safePromises ios
-  forM ios $ \_ -> unsafeInterleaveIO (result =<< readChan c)
+  fmap (scanl1 pseq) . forM ios $ \_ -> unsafeInterleaveIO (result =<< readChan c)
 {-# NOINLINE promises #-}
 
 
@@ -64,5 +64,6 @@ promises ios = do
 tryPromises :: [IO a] -> IO [Result a]
 tryPromises ios = do
   c <- safePromises ios
-  forM ios $ \_ -> unsafeInterleaveIO (readChan c)
+  fmap (scanl1 pseq) . forM ios 
+    $ \_ -> unsafeInterleaveIO (readChan c)
 {-# NOINLINE tryPromises #-}
