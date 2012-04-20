@@ -36,9 +36,9 @@ safePromises ios = do
   return c
                    
 -- |Forks an IO computation as a thread and immediately returns 
--- a lazy future. Evaluating the future before the thread completes
--- causes it to wait for a result. If the thread halts with a thrown exception,
--- then evaluating the future will re-throw the exception.
+-- an IO computation that results in a lazy future. Evaluating the future before
+-- the thread completes causes it to wait for a result. If the thread halts with
+-- a thrown exception, then evaluating the future will re-throw the exception.
 promise :: IO a -> IO a
 promise io = head <$> promises [io]
 
